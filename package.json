@@ -2,8 +2,9 @@
   "name": "speech-to-text",
   "version": "1.0.0",
   "description": "Demo",
-  "main": "RecordRTC.js",
+  "main": "serve.js",
   "dependencies": {
+    "@google-cloud/speech": "^1.1.0",
     "binaryjs": "^0.2.1",
     "express": "^4.16.2",
     "wav": "^1.0.1"
