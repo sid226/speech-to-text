@@ -1,19 +1,31 @@
- var express = require("express");
- var app = express();
+var binaryServer = require('binaryjs').BinaryServer;
+var wav = require('wav');
 
- /* serves main page */
- app.get("/", function(req, res) {
-    res.sendfile('webspeechdemo.html')
- });
+var server = binaryServer({port: 9001});
+console.log("Started server at port: ",9001);
+server.on('connection', function(client) {
+  console.log("Connection started!!");
+  var fileWriter = null;
+
+client.on('stream', function(stream, meta) {
+  var fileWriter = new wav.FileWriter('demo.wav', {
+    channels: 1,
+    sampleRate: 48000,
+    bitDepth: 16
+  });
+  stream.pipe(fileWriter);
+  stream.on('end', function() {
+    //write audio file
+        fileWriter.end();
+  });
+});
+
+client.on('close', function() {
+  console.log("Connection closed!!");
+  if (fileWriter != null) {
+    fileWriter.end();
+  }
+});
 
 
- /* serves all the static files */
- app.get(/^(.+)$/, function(req, res){ 
-     console.log('static file request : ' + req.params);
-     res.sendfile( __dirname + req.params[0]); 
- });
-
- var port = process.env.PORT || 5000;
- app.listen(port, function() {
-   console.log("Listening on " + port);
- });
+});
