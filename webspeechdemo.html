@@ -16,7 +16,7 @@
         <img id="start_img" src="mic.gif" alt="Start"></button>
     </div>
     
-    <button id="stop" onclick="stopStream()">Stop</button>
+    <button id="stop" onclick="stopRecording()">Stop</button>
 
     
 <div id="info">
@@ -44,86 +44,6 @@
 
   <script src="binary.js"></script>
 
-
-<script>
-var mediaStream = null;
-
- var client = new BinaryClient('ws://localhost:9001');
-
-client.on('open', function() {
-  // for the sake of this example let's put the stream in the window
-  console.log("ws connected!!");
-  window.Stream = client.createStream();
-}
-
-);
-
-function convertFloat32ToInt16(buffer) {
-  l = buffer.length;
-  buf = new Int16Array(l);
-  while (l--) {
-    buf[l] = Math.min(1, buffer[l])*0x7FFF;
-  }
-  return buf.buffer;
-}
-
-function initializeRecorder(stream) {
-  mediaStream = stream;
-            mediaStream.stop = function () {
-                this.getAudioTracks().forEach(function (track) {
-                    track.stop();
-                });
-                // this.getVideoTracks().forEach(function (track) { //in case... :)
-                //     track.stop();
-                // });
-            };
-
-  var audioContext = window.AudioContext;
-  var context = new audioContext();
-  var audioInput = context.createMediaStreamSource(stream);
-  var bufferSize = 2048;
-  // create a javascript node
-  var recorder = context.createScriptProcessor(2048, 1, 1);
-  // specify the processing function
-  recorder.onaudioprocess = recorderProcess;
-  // connect stream to our recorder
-  audioInput.connect(recorder);
-  // connect our recorder to the previous destination
-  recorder.connect(context.destination);
-}
-
-function recorderProcess(e) {
-  var left = e.inputBuffer.getChannelData(0);
-  window.Stream.write(convertFloat32ToInt16(left));
-}
-
-function onError(err) {
-  console.log("onError: ",err);
-
-}
-
-
-var recordAndStream=function () {
-  var session = {
-  audio: true,
-  video: false
-};
-var recordRTC = null;
-navigator.getUserMedia(session, initializeRecorder, onError);
-
-
-};
-
-
-var stopStream=function () {  
-  //stop recording
-  mediaStream.stop();
-  //close ws connection
-  client.close()
-};
-
-
-
-</script>
+  <script src="script.js"></script>
 
 
