@@ -1,8 +1,6 @@
 var binaryServer = require('binaryjs').BinaryServer;
 var wav = require('wav');
 var fs = require('fs');
-//var Worker = require('webworker-threads').Worker;
-
 
 ROOT_APP_PATH = fs.realpathSync('.'); 
 console.log(ROOT_APP_PATH);
@@ -41,7 +39,7 @@ const request = {
 };
 
 
-function startGoogleSpeechStream(ws) {      
+function startGoogleSpeechStream(ws,activeStreamID) {      
   console.log("new instance recognizeStream");
   var recognizeStream = gsclient
   .streamingRecognize(request)
@@ -51,15 +49,24 @@ function startGoogleSpeechStream(ws) {
   })
   .on('end', () => {
     console.log('end recognize stream:');
+    fs.readFile(ROOT_APP_PATH+'/transcript/script.json', 'utf8', function readFileCallback(err, data){
+      if (err){
+          console.log(err);
+      } else {
+        if(data)
+        {
+          console.log("Data Exists");
+      obj = JSON.parse(data); //now it an object
+        }
+      obj.table.push({id: activeStreamID, text:Transcription}); //add some data
+      json = JSON.stringify(obj); //convert it back to json
+      fs.writeFile(ROOT_APP_PATH+'/transcript/script.json', json, 'utf8', function () {
+        console.log("Transcription written successfully");
+      }); // write it back 
+    }});
     })
   .on('data', (data) => {            
-    // var text = data.results[0].alternatives[0].transcript;
-    // ws.send(`[Heard]: ${text}`); // send transcript to client  
-    // process.stdout.write(
-    //       data.results[0] && data.results[0].alternatives[0]
-    //         ? `Transcription: ${data.results[0].alternatives[0].transcript}\n`
-    //         : `\n\nReached transcription time limit, press Ctrl+C\n`
-    //     )
+   
     console.log("Transcription",data.results[0].alternatives[0].transcript);
     Transcription.push(data.results[0].alternatives[0].transcript);
   
@@ -67,15 +74,6 @@ function startGoogleSpeechStream(ws) {
   return recognizeStream;
 }
 
-  
-  // .on('error', console.error)
-  // .on('data', data =>
-  //   process.stdout.write(
-  //     data.results[0] && data.results[0].alternatives[0]
-  //       ? `Transcription: ${data.results[0].alternatives[0].transcript}\n`
-  //       : `\n\nReached transcription time limit, press Ctrl+C\n`
-  //   )
-  // );
 
 
 var server = binaryServer({port: 9001});
@@ -95,14 +93,14 @@ client.on('stream', function(stream, meta) {
   {
     if (meta.indexOf("info")>0) { // client sends an info string on connection that triggers server to start a speech stream             
       console.log('Start first stream');
-      gstreams.push(startGoogleSpeechStream(ws));
+      gstreams.push(startGoogleSpeechStream(ws,activeStreamID+1));
       activeStreamID = activeStreamID + 1;           
     }
     else { // client requested a new speech stream (client-side logic allows for triggering on a lull in input volume)
       console.log('Start another stream');
       gstreams[activeStreamID].end();
       console.log('end stream',activeStreamID);
-      gstreams.push(startGoogleSpeechStream(ws));
+      gstreams.push(startGoogleSpeechStream(ws,activeStreamID+1));
       activeStreamID = activeStreamID + 1;                              
     }    
          //stream to speech client
@@ -124,50 +122,21 @@ client.on('stream', function(stream, meta) {
   
   stream.on('end', function() {
     console.log("stream stopped");
-   // write audio file
-   
-
-
-        fileWriter.end();
+           fileWriter.end();
   });
 }
 
 });
 
+
 client.on('close', function() {
   console.log("Connection closed!!");
   console.log("END speech stream closed!!");
   gstreams[activeStreamID].end();
-  fs.readFile(ROOT_APP_PATH+'/transcript/script.json', 'utf8', function readFileCallback(err, data){
-    if (err){
-        console.log(err);
-    } else {
-      if(data)
-      {
-        console.log("Data Exists");
-    obj = JSON.parse(data); //now it an object
-      }
-    obj.table.push({id: activeStreamID, text:Transcription}); //add some data
-    json = JSON.stringify(obj); //convert it back to json
-    fs.writeFile(ROOT_APP_PATH+'/transcript/script.json', json, 'utf8', function () {
-      console.log("Transcription written successfully");
-    }); // write it back 
-  }});
-
-  // var fibo = new Worker(function() {
-  //   function fibo (n) {
-  //     return n > 1 ? fibo(n - 1) + fibo(n - 2) : 1;
-  //   }
-  //   this.onmessage = function (event) {
-  //     postMessage(fibo(event.data));
-  //   }
-  // });
-  // fibo.onmessage = function (event) {
-  //   res.end('fib(40) = ' + event.data);
-  // };
-  // fibo.postMessage(40);
+ 
 
   if (fileWriter != null) {
+    console.log("end file writer")
     fileWriter.end();
   }
 });
