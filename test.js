@@ -4,8 +4,9 @@ var fs = require('fs');
 
 ROOT_APP_PATH = fs.realpathSync('.');
 console.log(ROOT_APP_PATH);
+///node-speaker-recognition/training/kameswari_voice.wav
 
-recognition.createAndEnroll(ROOT_APP_PATH + '/node-speaker-recognition/training/kameswari_voice.wav', function (res, err) {
+recognition.createAndEnroll(ROOT_APP_PATH + '/clips/demo0.wav', function (res, err) {
     if (err) { console.log(err); }
     else{
 
@@ -19,7 +20,7 @@ recognition.createAndEnroll(ROOT_APP_PATH + '/node-speaker-recognition/training/
         console.log("result", res);
         UserId=res.identificationProfileId;
         
-        recognition.Operation(UserId, ROOT_APP_PATH + '/node-speaker-recognition/training/kameswari_voice.wav', function (res, err) {
+        recognition.Operation(UserId, ROOT_APP_PATH + '/clips/demo0.wav', function (res, err) {
             if (err) { console.log(err); }
             else{
             console.log("result", res);
